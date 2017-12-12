@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Analyzer</title>
+</head>
+<body>
+<h1>Image Analyzer</h1>
+<h2>Why does this exist?</h2>
+<p>In order to test our Pixel project, we had to prove it could generate specific images as requested by a user.
+But for that to happen, we had to first capture an image in our data structure.</p>
+<h2>How can I use this?</h2>
+<p>The gist is that you can load your own image, and this page will output, in our JSON format, the data required to capture
+this image (but we only have 9 colors, so you will lose detail).
+Here are the steps:
+<ul>
+    <li>Edit the src for #img to a local file you want to use, of dimensions 200 x 200 with no transparency.</li>
+    <li>Run this file through an IDE's environment (visit localhost, not file:///)</li>
+    <li>You can now take this output and throw it in the index file for use!</li>
+    <li>Success!</li>
+</ul>
+</p>
+
+<div class="imageContainer">
+
+
+    <canvas id="myCanvas" width = "200" height = "200">
+        Sorry, this browser does not support canvas
+    </canvas>
+    <img class = "hidden" src="Van Gogh.jpg" alt="" id="myimg">
+
+    <div class="output" id = "output">
+
+    </div>
+</div>
+<style>
+    .hidden{
+        display:none;
+    }
+    #output{
+        width: 100%;
+        word-break: break-all;
+    }
+</style>
+<script>
+
+    const colorOptions = ["R", "O", "Y", "G", "B","I","V","Bl","W"];
+    const colorValues = {
+        R: {R:255, G: 0, B: 0},
+        O: {R: 255, G: 165, B:0},
+        Y: {R: 255, G: 255, B:0},
+        G: {R: 0, G: 128, B:0},
+        B: {R: 255, G: 0, B:255},
+        I: {R: 75, G: 0, B:130},
+        V: {R: 238, G: 130, B:238},
+        Bl:{R: 0, G: 0, B:0},
+        W: {R: 255, G: 255, B:255}
+    };
+    window.onload = function(){
+
+        var img = document.querySelector("#myimg");
+        img.crossOrigin = "anonymous";
+
+
+        var canvas = document.querySelector("#myCanvas");
+        var context = canvas.getContext('2d');
+
+        context.drawImage(img,0,0);
+
+        let pixelData = context.getImageData(0,0,200,200).data;
+        console.log(pixelData);
+        var pixelOutput = [];
+
+        for (var i = 0; i<pixelData.length; i+=4){
+            var x = pixelMatch(pixelData[i], pixelData[i+1], pixelData[i+2])
+            //4th is alpha which we won't use
+            pixelOutput.push(x);
+        }
+
+        console.log(pixelOutput);
+        writeOutput(pixelOutput);
+
+    };
+
+    function pixelMatch(r, g, b){
+        var minScore = 255*3;
+        var minColor = "W";
+        for (var i = 0; i< colorOptions.length; i++){
+            var score = Math.abs(r - colorValues[colorOptions[i]]["R"]) + Math.abs(g - colorValues[colorOptions[i]]["G"]) + Math.abs(b - colorValues[colorOptions[i]]["B"]);
+            if (score < minScore){
+                minScore = score;
+                minColor = colorOptions[i];
+            }
+        }
+        return minColor;
+    }
+
+    function writeOutput(pixelOutput){
+        var outputContainer = document.querySelector("#output");
+        for (var i = 0 ; i< pixelOutput.length; i++){
+            pixelOutput[i] = '{color: "' + pixelOutput[i] + '"}';
+        }
+
+        outputContainer.innerText = "{pixels: [" + pixelOutput.toString() + "]}";
+    }
+
+</script>
+</body>
+
+</html>

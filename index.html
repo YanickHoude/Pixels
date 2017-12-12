@@ -90,9 +90,12 @@
 
 
 </style>
+
+<script type = "application/javascript" src = "imageData.js"></script>
 <script type="application/javascript">
     //Basic Config
     const colorOptions = ["R", "O", "Y", "G", "B","I","V","Bl","W"];
+
     const userColor = colorOptions[Math.floor(Math.random()*colorOptions.length)];
     const hostName = "localhost:3000";
 
@@ -100,7 +103,7 @@
     const containerElement = document.querySelector('.container');
 
     const debug = true;
-    const updateInterval = 5000; //milliseconds
+    const updateInterval = 15000; //milliseconds
 
     var lastRequestedPixelChange = 0;
 
@@ -164,15 +167,18 @@
                 });
             }else{
                 //Create fake data
-                var arr = [];
-                for (var i = 0; i<gridSize * gridSize; i++){
-                    let pixelColor = {color: colorOptions[Math.floor(Math.random()*colorOptions.length)]};
-                    arr.push(pixelColor);
-                }
-                var data = {
-                    pixels: arr
-                };
-                populateCanvas(data);
+//                var arr = [];
+//                for (var i = 0; i<gridSize * gridSize; i++){
+//                    let pixelColor = {color: colorOptions[Math.floor(Math.random()*colorOptions.length)]};
+//                    arr.push(pixelColor);
+//                }
+//                var data = {
+//                    pixels: arr
+//                };
+//                populateCanvas(data);
+//                console.log(data);
+
+                populateCanvas(templateImages[Math.floor(Math.random() * templateImages.length)]);
             }
 
         }catch(e){
@@ -187,11 +193,10 @@
         }
         for (var i = 0; i< gridSize * gridSize; i++){
             if (debug){
-                console.log(data.pixels[i].color);
+//                console.log(data.pixels[i].color);
             }
             //Reset Pixel Color:
             let selector = "#pixel" + i;
-            console.log(selector);
             let pixel = document.querySelector(selector);
             pixel.classList.remove(...colorOptions);
             pixel.classList.add(data.pixels[i].color);
@@ -228,5 +233,13 @@
         xhr.send(params);
         return (xhr);
     }
+
+
+
+    //Tester
+
+
+
+
 </script>
 </html>
