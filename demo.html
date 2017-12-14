@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo | OS Project</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+</head>
+<body>
+<div class="instructions text-container">
+    <h1>Pixels</h1>
+    <p>Welcome to Pixels! Every user is randomly asssigned a color. Yours is: <span class="pixel" id = "sample-pixel"></span>.
+    </p>
+    <p>
+        Every second, you'll be able to select a pixel. If your color is the most requested color for that pixel, then
+        that will be the new color for that pixel. The server will update the entire canvas every 5 seconds with the
+        community's decision on each pixel color. Happy coloring!</p>
+    <p>By Yanick Houde, Patrick Lee, Laban Lin</p>
+</div>
+
+<div class="sampleImages text-container">
+    <p>Want to see this in action? Here are some sample canvases. Clicking on one will send 1 request per pixel to the server.</p>
+    <Br/>
+    <div class="sample-image" data-arrayID = "0">
+        <div class = "sample">
+            <img src="images/Mona%20Lisa.jpg" alt="">
+            <h4>Original Image</h4>
+        </div>
+        <div class = "sample">
+            <img src="images/pMonaLisa.jpg" alt="">
+            <h4>Pixel Version</h4>
+        </div>
+    </div>
+    <div class="sample-image" data-arrayID = "1">
+        <div class = "sample">
+            <img src="images/Mustang.jpg" alt="">
+            <h4>Original Image</h4>
+        </div>
+        <div class = "sample">
+            <img src="images/pMustang.jpg" alt="">
+            <h4>Pixel Version</h4>
+        </div>
+    </div>
+    <div class="sample-image" data-arrayID = "2">
+        <div class = "sample">
+            <img src="images/Rick%20Sanchez.jpg" alt="">
+            <h4>Original Image</h4>
+        </div>
+        <div class = "sample">
+            <img src="images/pRickSanchez.jpg" alt="">
+            <h4>Pixel Version</h4>
+        </div>
+    </div>
+    <div class="sample-image" data-arrayID = "3">
+        <div class = "sample">
+            <img src="images/Van%20Gogh.jpg" alt="">
+            <h4>Original Image</h4>
+        </div>
+        <div class = "sample">
+            <img src="images/pVanGogh.jpg" alt="">
+            <h4>Pixel Version</h4>
+        </div>
+    </div>
+</div>
+<div class="container">
+
+</div>
+</body>
+<style>
+    *{
+        border:0;
+        margin:0;
+        padding:0;
+        box-sizing: border-box;
+        font-family: 'Lato';
+    }
+    #sample-pixel{
+        border: 1px solid grey;
+    }
+    .pixel:hover {
+        border: 1px solid black;
+    }
+    .pixel.Bl:hover, .pixel.I:hover, .pixel.B:hover, .pixel.G:hover{
+        border: 1px solid white;
+    }
+    .row{
+        height: 10px;
+        white-space:nowrap;
+    }
+    .pixel{
+        display: inline-block;
+        background-color: white;
+        width: 10px;
+        height: 10px;
+    }
+    .pixel.R{
+        background-color: red;
+    }
+    .pixel.O{
+        background-color: orange;
+    }
+    .pixel.Y{
+        background-color: yellow;
+    }
+    .pixel.G{
+        background-color: green;
+    }
+    .pixel.B{
+        background-color: blue;
+    }
+    .pixel.I{
+        background-color: indigo;
+    }
+    .pixel.V{
+        background-color: violet;
+
+    }
+    .pixel.Bl{
+        background-color: black;
+
+    }
+    .pixel.W{
+        background-color: white;
+    }
+    .text-container{
+        max-width: 900px;
+        width: 100%;
+        margin: 30px auto;
+    }
+    .container{
+        overflow: scroll;
+    }
+    p{
+        margin-top: 10px;
+    }
+    .sample, .sample-image{
+
+        display:inline-block;
+    }
+    .sample-image{
+        margin-top: 30px;
+    }
+
+    .sample{
+        width: 200px;
+        height: 200px;
+    }
+
+</style>
+
+<script type = "application/javascript" src = "imageData.js"></script>
+<script type="application/javascript">
+    //Basic Config
+    const colorOptions = ["R", "O", "Y", "G", "B","I","V","Bl","W"];
+
+    const userColor = colorOptions[Math.floor(Math.random()*colorOptions.length)];
+    const hostName = "localhost:3000";
+
+    const gridSize = 200;
+    const containerElement = document.querySelector('.container');
+
+    const debug = true;
+    const updateInterval = 15000; //milliseconds
+
+    var lastRequestedPixelChange = 0;
+
+
+    //Show user their color
+    document.querySelector("#sample-pixel").classList.add(userColor);
+
+
+    //Add Event Listeners
+    var samples = document.querySelectorAll(".sample-image");
+    for (var i = 0; i < samples.length; i++){
+        samples[i].addEventListener("click", sendCanvas);
+    }
+    //Create a bunch of pixels
+    for (var i = 0; i< gridSize; i++){
+        var row = document.createElement('div');
+        row.classList.add("row");
+
+        for (var j = 0; j<gridSize; j++){
+            let identifier = "pixel" + (gridSize * i + j);
+            var newPixel = document.createElement("div");
+            newPixel.classList.add("pixel");
+            newPixel.id = identifier;
+            newPixel.addEventListener("click", requestColorChange);
+            row.appendChild(newPixel);
+
+        }
+        containerElement.appendChild(row);
+    }
+
+    getCanvas();
+    window.setInterval(getCanvas, updateInterval);
+
+
+    //Request color change
+    function requestColorChange(event){
+        let id = event.target.id;
+        console.log("Pixel #" + id + " selected.");
+        let timeOfRequest = Date.now();
+        if (timeOfRequest - lastRequestedPixelChange > 1000){
+            //1 second must have elapsed
+            lastRequestedPixelChange = timeOfRequest;
+            try{
+                if (!debug){
+                    post(hostName + "/pixelRequest/" + id + "/" + userColor, null, function(data){
+                        //received
+                        console.log(data);
+                    });
+                }else{
+                    console.log('In production mode, this would be posted');
+                }
+            }catch(e){
+                console.log("Error posting...not sure what happened here.");
+            }
+        }else{
+            alert('You have to wait 1 second between requests!');
+        }
+
+    }
+
+    //Get Canvas JSON
+    function getCanvas(){
+        try{
+            if (!debug){
+                get(hostName + "/pixels", function(data){
+                    //received
+                    populateCanvas(data);
+                });
+            }else{
+                //Create fake data
+                var arr = [];
+                for (var i = 0; i<gridSize * gridSize; i++){
+                    let pixelColor = {color: "W"}; ////
+                    arr.push(pixelColor);
+                }
+                var data = {
+                    pixels: arr
+                };
+                populateCanvas(data);
+            }
+
+        }catch(e){
+            console.log("Error getting...not sure what happened here.");
+        }
+    }
+
+    function sendCanvas(e){
+        var target = e.target;
+        while(!target.classList.contains("sample-image"))
+        {
+            target = target.parentElement;
+        }
+        console.log(target);
+        var arrayEl = target.dataset.arrayid;
+        var pixels = templateImages[arrayEl];
+        if (!debug){
+            for (var i = 0; i<pixels['pixels'].length; i++){
+                post(hostName + "/pixelRequest/" + i + "/" + pixels['pixels'][i]["color"], null, function(data){
+                    //
+                });
+            }
+        }
+    }
+
+    //Populate canvas
+    function populateCanvas(data){
+        if (debug){
+            console.log(data);
+        }
+        for (var i = 0; i< gridSize * gridSize; i++){
+            if (debug){
+//                console.log(data.pixels[i].color);
+            }
+            //Reset Pixel Color:
+            let selector = "#pixel" + i;
+            let pixel = document.querySelector(selector);
+            pixel.classList.remove(...colorOptions);
+            pixel.classList.add(data.pixels[i].color);
+        }
+
+    }
+
+
+    //GET helper
+    function get(url, success) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+        xhr.open('GET', url);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState>3 && xhr.status==200) success(JSON.parse(xhr.responseText));
+        };
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send();
+        return (xhr);
+    }
+
+    //POST helper
+    function post(url, data, success) {
+        var params = typeof data == 'string' ? data : Object.keys(data).map(
+                function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]) }
+            ).join('&');
+
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.open('POST', url);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState>3 && xhr.status==200) { success(JSON.parse(xhr.responseText)); }
+        };
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(params);
+        return (xhr);
+    }
+
+
+
+    //Tester
+
+
+
+
+</script>
+</html>
